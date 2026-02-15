@@ -17,16 +17,17 @@ import java.io.InputStreamReader;
 public class OutdoorTileService extends TileService {
 
     private static final long OUTDOOR_TIMEOUT = 15 * 60 * 1000;
-    private boolean lastKnownState = false;
 
-    private String runRootRead(String cmd) {
+    private boolean readRealState() {
         try {
-            Process p = Runtime.getRuntime().exec(new String[]{"su","-c",cmd});
+            Process p = Runtime.getRuntime().exec(
+                    new String[]{"su","-c","settings get system display_outdoor_mode"});
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(p.getInputStream()));
-            return reader.readLine();
+            String result = reader.readLine();
+            return "1".equals(result);
         } catch (Exception e) {
-            return null;
+            return false;
         }
     }
 
@@ -39,11 +40,6 @@ public class OutdoorTileService extends TileService {
             os.flush();
             su.waitFor();
         } catch (Exception ignored) {}
-    }
-
-    private boolean readRealState() {
-        String result = runRootRead("settings get system display_outdoor_mode");
-        return "1".equals(result);
     }
 
     private void scheduleTimeout() {
@@ -92,7 +88,8 @@ public class OutdoorTileService extends TileService {
     @Override
     public void onStartListening() {
         super.onStartListening();
-        updateTileUI(lastKnownState);
+        boolean currentState = readRealState();
+        updateTileUI(currentState);
     }
 
     @Override
@@ -104,16 +101,14 @@ public class OutdoorTileService extends TileService {
         if (currentState) {
             runRootWrite("settings put system display_outdoor_mode 0");
             cancelTimeout();
-            lastKnownState = false;
             Toast.makeText(this, "Outdoor Mode OFF", Toast.LENGTH_SHORT).show();
         } else {
             runRootWrite("settings put system display_outdoor_mode 1");
             scheduleTimeout();
-            lastKnownState = true;
             Toast.makeText(this, "Outdoor Mode ON (15 min)", Toast.LENGTH_SHORT).show();
         }
 
         vibrate();
-        updateTileUI(lastKnownState);
+        updateTileUI(!currentState);
     }
 }
