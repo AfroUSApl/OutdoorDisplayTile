@@ -5,6 +5,8 @@ Enables Samsung's hidden **display_outdoor_mode** (High Brightness Mode)
 manually.
 
 ------------------------------------------------------------------------
+![Outdoor Tile v2.5](images/outdoortilev25.jpg)
+------------------------------------------------------------------------
 
 ## 📱 What It Does
 
