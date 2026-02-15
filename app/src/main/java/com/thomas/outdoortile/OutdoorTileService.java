@@ -17,8 +17,20 @@ import java.io.InputStreamReader;
 public class OutdoorTileService extends TileService {
 
     private static final long OUTDOOR_TIMEOUT = 15 * 60 * 1000;
+    private boolean lastKnownState = false;
 
-    private void runRoot(String cmd) {
+    private String runRootRead(String cmd) {
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"su","-c",cmd});
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(p.getInputStream()));
+            return reader.readLine();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void runRootWrite(String cmd) {
         try {
             Process su = Runtime.getRuntime().exec("su");
             DataOutputStream os = new DataOutputStream(su.getOutputStream());
@@ -29,18 +41,9 @@ public class OutdoorTileService extends TileService {
         } catch (Exception ignored) {}
     }
 
-    // FIXED: no root required for reading state
-    private boolean isOutdoorOn() {
-        try {
-            Process p = Runtime.getRuntime().exec(
-                    new String[]{"sh","-c","settings get system display_outdoor_mode"});
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(p.getInputStream()));
-            String result = reader.readLine();
-            return "1".equals(result);
-        } catch (Exception e) {
-            return false;
-        }
+    private boolean readRealState() {
+        String result = runRootRead("settings get system display_outdoor_mode");
+        return "1".equals(result);
     }
 
     private void scheduleTimeout() {
@@ -69,10 +72,9 @@ public class OutdoorTileService extends TileService {
         }
     }
 
-    private void updateTileState() {
+    private void updateTileUI(boolean enabled) {
         Tile tile = getQsTile();
         if (tile != null) {
-            boolean enabled = isOutdoorOn();
             tile.setState(enabled ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
             tile.setLabel(enabled ? "Outdoor ON" : "Outdoor OFF");
             tile.setSubtitle(enabled ? "Max brightness" : "Adaptive mode");
@@ -90,26 +92,28 @@ public class OutdoorTileService extends TileService {
     @Override
     public void onStartListening() {
         super.onStartListening();
-        updateTileState();
+        updateTileUI(lastKnownState);
     }
 
     @Override
     public void onClick() {
         super.onClick();
 
-        boolean enabled = isOutdoorOn();
+        boolean currentState = readRealState();
 
-        if (enabled) {
-            runRoot("settings put system display_outdoor_mode 0");
+        if (currentState) {
+            runRootWrite("settings put system display_outdoor_mode 0");
             cancelTimeout();
+            lastKnownState = false;
             Toast.makeText(this, "Outdoor Mode OFF", Toast.LENGTH_SHORT).show();
         } else {
-            runRoot("settings put system display_outdoor_mode 1");
+            runRootWrite("settings put system display_outdoor_mode 1");
             scheduleTimeout();
+            lastKnownState = true;
             Toast.makeText(this, "Outdoor Mode ON (15 min)", Toast.LENGTH_SHORT).show();
         }
 
         vibrate();
-        updateTileState();
+        updateTileUI(lastKnownState);
     }
 }
