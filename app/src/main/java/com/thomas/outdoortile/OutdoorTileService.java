@@ -29,10 +29,11 @@ public class OutdoorTileService extends TileService {
         } catch (Exception ignored) {}
     }
 
+    // FIXED: no root required for reading state
     private boolean isOutdoorOn() {
         try {
             Process p = Runtime.getRuntime().exec(
-                    new String[]{"su","-c","settings get system display_outdoor_mode"});
+                    new String[]{"sh","-c","settings get system display_outdoor_mode"});
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(p.getInputStream()));
             String result = reader.readLine();
