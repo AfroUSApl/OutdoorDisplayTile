@@ -1,24 +1,16 @@
-plugins {
-    id 'com.android.application'
-}
-
-android {
-    namespace 'com.thomas.outdoortile'
-    compileSdk 34
-
-    defaultConfig {
-        applicationId "com.thomas.outdoortile"
-        minSdk 29
-        targetSdk 34
-        versionCode 5
-        versionName "2.3"
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
     }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.2'
     }
 }
 
-dependencies {}
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
