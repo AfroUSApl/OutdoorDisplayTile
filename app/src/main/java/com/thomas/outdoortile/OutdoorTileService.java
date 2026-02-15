@@ -2,12 +2,13 @@ package com.thomas.outdoortile;
 
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
-
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.InputStreamReader;
 
 public class OutdoorTileService extends TileService {
 
-    private void runRootCommand(String cmd) {
+    private void runRoot(String cmd) {
         try {
             Process su = Runtime.getRuntime().exec("su");
             DataOutputStream os = new DataOutputStream(su.getOutputStream());
@@ -20,9 +21,10 @@ public class OutdoorTileService extends TileService {
 
     private boolean isOutdoorOn() {
         try {
-            Process p = Runtime.getRuntime().exec(new String[]{"su","-c","settings get system display_outdoor_mode"});
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(p.getInputStream()));
+            Process p = Runtime.getRuntime().exec(
+                new String[]{"su","-c","settings get system display_outdoor_mode"});
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(p.getInputStream()));
             String result = reader.readLine();
             return "1".equals(result);
         } catch (Exception e) {
@@ -44,7 +46,7 @@ public class OutdoorTileService extends TileService {
     public void onClick() {
         super.onClick();
         boolean enabled = isOutdoorOn();
-        runRootCommand("settings put system display_outdoor_mode " + (enabled ? "0" : "1"));
+        runRoot("settings put system display_outdoor_mode " + (enabled ? "0" : "1"));
 
         Tile tile = getQsTile();
         if (tile != null) {
