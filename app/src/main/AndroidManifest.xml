@@ -8,23 +8,18 @@
         <service
             android:name=".OutdoorTileService"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
+            android:exported="true"
+            android:settingsActivity="com.thomas.outdoortile.DisplayRedirectActivity">
 
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
         </service>
 
-        <activity
-            android:name=".DisplayRedirectActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
-            </intent-filter>
-        </activity>
+        <activity android:name=".DisplayRedirectActivity"
+            android:exported="true" />
 
-        <receiver
-            android:name=".TimeoutReceiver"
+        <receiver android:name=".TimeoutReceiver"
             android:exported="false" />
 
     </application>
