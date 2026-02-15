@@ -17,8 +17,9 @@ import java.io.InputStreamReader;
 
 public class OutdoorTileService extends TileService {
 
-    private static final long OUTDOOR_TIMEOUT = 15 * 60 * 1000;
+    private static final long OUTDOOR_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
+    // 🔹 Read real state using root
     private boolean readRealState() {
         try {
             Process p = Runtime.getRuntime().exec(
@@ -26,12 +27,13 @@ public class OutdoorTileService extends TileService {
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(p.getInputStream()));
             String result = reader.readLine();
-            return "1".equals(result);
+            return result != null && result.trim().equals("1");
         } catch (Exception e) {
             return false;
         }
     }
 
+    // 🔹 Write state using root
     private void runRootWrite(String cmd) {
         try {
             Process su = Runtime.getRuntime().exec("su");
@@ -43,15 +45,19 @@ public class OutdoorTileService extends TileService {
         } catch (Exception ignored) {}
     }
 
+    // 🔹 Schedule timeout (NO exact alarm → no permission required)
     private void scheduleTimeout() {
         Intent intent = new Intent(this, TimeoutReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         if (alarmManager != null) {
-            alarmManager.setExactAndAllowWhileIdle(
+            alarmManager.set(
                     AlarmManager.ELAPSED_REALTIME_WAKEUP,
                     SystemClock.elapsedRealtime() + OUTDOOR_TIMEOUT,
                     pendingIntent
@@ -59,11 +65,15 @@ public class OutdoorTileService extends TileService {
         }
     }
 
+    // 🔹 Cancel timeout
     private void cancelTimeout() {
         Intent intent = new Intent(this, TimeoutReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         if (alarmManager != null) {
@@ -71,6 +81,7 @@ public class OutdoorTileService extends TileService {
         }
     }
 
+    // 🔹 Update tile UI safely
     private void updateTileUI(boolean enabled) {
         Tile tile = getQsTile();
         if (tile != null) {
@@ -81,14 +92,17 @@ public class OutdoorTileService extends TileService {
         }
     }
 
+    // 🔹 Haptic feedback
     private void vibrate() {
-        Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-        if (v != null && v.hasVibrator()) {
-            v.vibrate(VibrationEffect.createOneShot(
-                    40,
-                    VibrationEffect.DEFAULT_AMPLITUDE
-            ));
-        }
+        try {
+            Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+            if (v != null && v.hasVibrator()) {
+                v.vibrate(VibrationEffect.createOneShot(
+                        40,
+                        VibrationEffect.DEFAULT_AMPLITUDE
+                ));
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -116,7 +130,7 @@ public class OutdoorTileService extends TileService {
 
         vibrate();
 
-        // 🔥 SAFE refresh — prevents Samsung crash
+        // 🔹 Safe refresh (prevents Samsung QS crash)
         requestListeningState(
                 this,
                 new ComponentName(this, OutdoorTileService.class)
