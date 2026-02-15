@@ -1,6 +1,9 @@
 package com.thomas.outdoortile;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.service.quicksettings.Tile;
@@ -12,6 +15,8 @@ import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 
 public class OutdoorTileService extends TileService {
+
+    private static final long OUTDOOR_TIMEOUT = 15 * 60 * 1000;
 
     private void runRoot(String cmd) {
         try {
@@ -37,6 +42,32 @@ public class OutdoorTileService extends TileService {
         }
     }
 
+    private void scheduleTimeout() {
+        Intent intent = new Intent(this, TimeoutReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        if (alarmManager != null) {
+            alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                    SystemClock.elapsedRealtime() + OUTDOOR_TIMEOUT,
+                    pendingIntent
+            );
+        }
+    }
+
+    private void cancelTimeout() {
+        Intent intent = new Intent(this, TimeoutReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        if (alarmManager != null) {
+            alarmManager.cancel(pendingIntent);
+        }
+    }
+
     private void updateTileState() {
         Tile tile = getQsTile();
         if (tile != null) {
@@ -44,13 +75,6 @@ public class OutdoorTileService extends TileService {
             tile.setState(enabled ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
             tile.setLabel(enabled ? "Outdoor ON" : "Outdoor OFF");
             tile.setSubtitle(enabled ? "Max brightness" : "Adaptive mode");
-
-            tile.setIcon(android.graphics.drawable.Icon.createWithResource(
-                    this,
-                    enabled ? android.R.drawable.ic_menu_day
-                            : android.R.drawable.ic_menu_gallery
-            ));
-
             tile.updateTile();
         }
     }
@@ -74,21 +98,17 @@ public class OutdoorTileService extends TileService {
 
         boolean enabled = isOutdoorOn();
 
-        runRoot("settings put system display_outdoor_mode " + (enabled ? "0" : "1"));
+        if (enabled) {
+            runRoot("settings put system display_outdoor_mode 0");
+            cancelTimeout();
+            Toast.makeText(this, "Outdoor Mode OFF", Toast.LENGTH_SHORT).show();
+        } else {
+            runRoot("settings put system display_outdoor_mode 1");
+            scheduleTimeout();
+            Toast.makeText(this, "Outdoor Mode ON (15 min)", Toast.LENGTH_SHORT).show();
+        }
 
         vibrate();
-
-        Toast.makeText(this,
-                enabled ? "Outdoor Mode OFF" : "Outdoor Mode ON",
-                Toast.LENGTH_SHORT).show();
-
         updateTileState();
-    }
-
-    @Override
-    public void onLongClick() {
-        Intent intent = new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
     }
 }
