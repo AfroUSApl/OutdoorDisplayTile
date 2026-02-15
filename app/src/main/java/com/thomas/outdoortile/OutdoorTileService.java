@@ -2,6 +2,7 @@ package com.thomas.outdoortile;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
@@ -45,7 +46,8 @@ public class OutdoorTileService extends TileService {
     private void scheduleTimeout() {
         Intent intent = new Intent(this, TimeoutReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         if (alarmManager != null) {
@@ -60,7 +62,8 @@ public class OutdoorTileService extends TileService {
     private void cancelTimeout() {
         Intent intent = new Intent(this, TimeoutReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         if (alarmManager != null) {
@@ -81,7 +84,10 @@ public class OutdoorTileService extends TileService {
     private void vibrate() {
         Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         if (v != null && v.hasVibrator()) {
-            v.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE));
+            v.vibrate(VibrationEffect.createOneShot(
+                    40,
+                    VibrationEffect.DEFAULT_AMPLITUDE
+            ));
         }
     }
 
@@ -109,6 +115,11 @@ public class OutdoorTileService extends TileService {
         }
 
         vibrate();
-        updateTileUI(!currentState);
+
+        // 🔥 SAFE refresh — prevents Samsung crash
+        requestListeningState(
+                this,
+                new ComponentName(this, OutdoorTileService.class)
+        );
     }
 }
