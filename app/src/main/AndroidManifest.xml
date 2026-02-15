@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.thomas.outdoortile">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
         android:label="Outdoor Tile"
@@ -9,11 +8,19 @@
         <service
             android:name=".OutdoorTileService"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
+            android:exported="true"
+            android:settingsActivity="com.thomas.outdoortile.DisplayRedirectActivity">
+
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
         </service>
+
+        <activity android:name=".DisplayRedirectActivity"
+            android:exported="true" />
+
+        <receiver android:name=".TimeoutReceiver"
+            android:exported="false" />
 
     </application>
 </manifest>
