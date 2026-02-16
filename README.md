@@ -95,14 +95,15 @@ For production distribution, a permanent signing key should be used.
 
 -   GitHub Actions (Ubuntu runner)
 -   JDK 17 (Temurin)
--   Gradle 8.4
+-   Gradle 8.4 (wrapper)
+-   Android Gradle Plugin 8.1.1
 -   Compile SDK 34
 -   Target SDK 34
 -   Min SDK 29
 
 Build command:
 
-    gradle assembleDebug
+    ./gradlew assembleDebug
 
 ------------------------------------------------------------------------
 
