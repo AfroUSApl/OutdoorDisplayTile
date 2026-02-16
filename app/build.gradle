@@ -10,7 +10,7 @@ android {
         applicationId "com.thomas.outdoortile"
         minSdk 26
         targetSdk 34
-        versionCode 26
+        versionCode 25
         versionName "2.6"
     }
 
