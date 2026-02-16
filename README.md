@@ -155,5 +155,18 @@ Outdoor mode forces maximum brightness and may increase:
 
 ------------------------------------------------------------------------
 
+# 👨‍💻 Author
+
+Thomas  
+Built for power users who want real battery telemetry.
+
+------------------------------------------------------------------------
+
+# 📜 License
+
+MIT License
+
+------------------------------------------------------------------------
+
 **Current Version:** 2.5\
 Generated: 2026-02-15 UTC
